@@ -1,123 +1,113 @@
 using UnityEngine;
 
-namespace ShaderPractice
+/// <summary>
+/// Controls a dissolve spawn effect that cycles through a dissolve animation
+/// using particle systems and material property changes.
+/// </summary>
+public class SpawnEffectDissolve : MonoBehaviour
 {
-    /// <summary>
-    /// Controls a dissolve spawn effect that cycles through a dissolve animation
-    /// using particle systems and material property changes.
-    /// </summary>
-    public class SpawnEffectDissolve : MonoBehaviour
+    private static readonly int DissolveThresholdProperty = Shader.PropertyToID("_DissolveThreshold");
+
+    [Header("Effect Timing")]
+    public float spawnEffectTime = 2;
+    public float pause = 1;
+
+    [Header("Animation")]
+    public AnimationCurve fadeIn;
+
+    private ParticleSystem ps;
+    private float timer = 0;
+    private Renderer _renderer;
+    private MaterialPropertyBlock propertyBlock;
+
+    private void Start()
     {
-        private static readonly int DissolveThresholdProperty = Shader.PropertyToID("_DissolveThreshold");
-
-        [Header("Effect Timing")]
-        [Tooltip("Duration of the spawn/dissolve effect in seconds.")]
-        [SerializeField] private float effectDuration = 2f;
-
-        [Tooltip("Pause duration between effect cycles in seconds.")]
-        [SerializeField] private float pauseDuration = 1f;
-
-        [Header("Animation")]
-        [Tooltip("Animation curve controlling the dissolve fade-in.")]
-        [SerializeField] private AnimationCurve fadeInCurve = AnimationCurve.Linear(0, 0, 1, 1);
-
-        private ParticleSystem particleSystem;
-        private Renderer objectRenderer;
-        private MaterialPropertyBlock propertyBlock;
-        private float timer;
-
-        private void Start()
+        if (!Initialize())
         {
-            if (!Initialize())
-            {
-                enabled = false;
-            }
+            enabled = false;
+        }
+    }
+
+    /// <summary>
+    /// Initializes required components and validates references.
+    /// </summary>
+    private bool Initialize()
+    {
+        _renderer = GetComponent<Renderer>();
+        if (_renderer == null)
+        {
+            Debug.LogError($"[SpawnEffectDissolve] No Renderer found on {gameObject.name}.");
+            return false;
         }
 
-        /// <summary>
-        /// Initializes required components and validates references.
-        /// </summary>
-        private bool Initialize()
+        ps = GetComponentInChildren<ParticleSystem>();
+        if (ps == null)
         {
-            objectRenderer = GetComponent<Renderer>();
-            if (objectRenderer == null)
-            {
-                Debug.LogError($"[SpawnEffectDissolve] No Renderer found on {gameObject.name}.");
-                return false;
-            }
-
-            particleSystem = GetComponentInChildren<ParticleSystem>();
-            if (particleSystem == null)
-            {
-                Debug.LogError($"[SpawnEffectDissolve] No ParticleSystem found in children of {gameObject.name}.");
-                return false;
-            }
-
-            // Initialize property block for efficient material property updates
-            propertyBlock = new MaterialPropertyBlock();
-
-            // Stop particle system before configuring duration
-            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-
-            // Configure particle system duration
-            var main = particleSystem.main;
-            main.duration = effectDuration;
-
-            // Start the effect
-            particleSystem.Play();
-
-            return true;
+            Debug.LogError($"[SpawnEffectDissolve] No ParticleSystem found in children of {gameObject.name}.");
+            return false;
         }
 
-        private void Update()
+        // Initialize property block for efficient material property updates
+        propertyBlock = new MaterialPropertyBlock();
+
+        // Stop particle system before configuring duration
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        // Configure particle system duration
+        var main = ps.main;
+        main.duration = spawnEffectTime;
+
+        // Start the effect
+        ps.Play();
+
+        return true;
+    }
+
+    private void Update()
+    {
+        UpdateTimer();
+        UpdateDissolveEffect();
+    }
+
+    /// <summary>
+    /// Updates the timer and restarts the effect cycle when complete.
+    /// </summary>
+    private void UpdateTimer()
+    {
+        if (timer < spawnEffectTime + pause)
         {
-            UpdateTimer();
-            UpdateDissolveEffect();
+            timer += Time.deltaTime;
         }
-
-        /// <summary>
-        /// Updates the timer and restarts the effect cycle when complete.
-        /// </summary>
-        private void UpdateTimer()
+        else
         {
-            float cycleDuration = effectDuration + pauseDuration;
-
-            if (timer < cycleDuration)
-            {
-                timer += Time.deltaTime;
-            }
-            else
-            {
-                particleSystem.Play();
-                timer = 0f;
-            }
+            ps.Play();
+            timer = 0;
         }
+    }
 
-        /// <summary>
-        /// Updates the dissolve threshold on all materials using MaterialPropertyBlock.
-        /// </summary>
-        private void UpdateDissolveEffect()
+    /// <summary>
+    /// Updates the dissolve threshold on all materials using MaterialPropertyBlock.
+    /// </summary>
+    private void UpdateDissolveEffect()
+    {
+        float dissolveValue = fadeIn.Evaluate(Mathf.InverseLerp(0, spawnEffectTime, timer));
+
+        // Use MaterialPropertyBlock for better performance (no material instantiation)
+        _renderer.GetPropertyBlock(propertyBlock);
+        propertyBlock.SetFloat(DissolveThresholdProperty, dissolveValue);
+        _renderer.SetPropertyBlock(propertyBlock);
+    }
+
+    /// <summary>
+    /// Resets the effect to its initial state.
+    /// </summary>
+    public void ResetEffect()
+    {
+        timer = 0;
+        if (ps != null)
         {
-            float normalizedTime = Mathf.InverseLerp(0f, effectDuration, timer);
-            float dissolveValue = fadeInCurve.Evaluate(normalizedTime);
-
-            // Use MaterialPropertyBlock for better performance (no material instantiation)
-            objectRenderer.GetPropertyBlock(propertyBlock);
-            propertyBlock.SetFloat(DissolveThresholdProperty, dissolveValue);
-            objectRenderer.SetPropertyBlock(propertyBlock);
-        }
-
-        /// <summary>
-        /// Resets the effect to its initial state.
-        /// </summary>
-        public void ResetEffect()
-        {
-            timer = 0f;
-            if (particleSystem != null)
-            {
-                particleSystem.Stop();
-                particleSystem.Play();
-            }
+            ps.Stop();
+            ps.Play();
         }
     }
 }
