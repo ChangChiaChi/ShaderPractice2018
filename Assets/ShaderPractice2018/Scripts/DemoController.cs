@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using TMPro;
 
 namespace ShaderPractice
@@ -25,20 +26,27 @@ namespace ShaderPractice
         }
 
         [Header("Demo Settings")]
+        [FormerlySerializedAs("demoNum")]
         [SerializeField] private DemoType currentDemo = DemoType.None;
 
         [Header("Character References")]
+        [FormerlySerializedAs("_Character")]
         [SerializeField] private GameObject[] characters;
 
         [Header("Post-Processing Effects")]
+        [FormerlySerializedAs("_bloom")]
         [SerializeField] private TAShader.Bloom bloomEffect;
+        [FormerlySerializedAs("_MotionBlur")]
         [SerializeField] private TAShader.MotionBlur motionBlurEffect;
 
         [Header("Animation")]
+        [FormerlySerializedAs("_Animator")]
         [SerializeField] private Animator characterAnimator;
 
         [Header("UI References")]
+        [FormerlySerializedAs("_textMesh")]
         [SerializeField] private TextMeshProUGUI titleText;
+        [FormerlySerializedAs("_btn")]
         [SerializeField] private GameObject[] navigationButtons;
 
         private readonly string[] demoTitles =

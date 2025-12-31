@@ -56,6 +56,9 @@ namespace ShaderPractice
             // Initialize property block for efficient material property updates
             propertyBlock = new MaterialPropertyBlock();
 
+            // Stop particle system before configuring duration
+            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
             // Configure particle system duration
             var main = particleSystem.main;
             main.duration = effectDuration;
