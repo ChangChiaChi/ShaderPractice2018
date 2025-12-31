@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 using TMPro;
 
 namespace ShaderPractice
@@ -26,30 +25,23 @@ namespace ShaderPractice
         }
 
         [Header("Demo Settings")]
-        [FormerlySerializedAs("demoNum")]
-        [SerializeField] private DemoType currentDemo = DemoType.None;
+        public int demoNum = 0;
 
         [Header("Character References")]
-        [FormerlySerializedAs("_Character")]
-        [SerializeField] private GameObject[] characters;
+        public GameObject[] _Character;
 
         [Header("Post-Processing Effects")]
-        [FormerlySerializedAs("_bloom")]
-        [SerializeField] private TAShader.Bloom bloomEffect;
-        [FormerlySerializedAs("_MotionBlur")]
-        [SerializeField] private TAShader.MotionBlur motionBlurEffect;
+        public TAShader.Bloom _bloom;
+        public TAShader.MotionBlur _MotionBlur;
 
         [Header("Animation")]
-        [FormerlySerializedAs("_Animator")]
-        [SerializeField] private Animator characterAnimator;
+        public Animator _Animator;
 
         [Header("UI References")]
-        [FormerlySerializedAs("_textMesh")]
-        [SerializeField] private TextMeshProUGUI titleText;
-        [FormerlySerializedAs("_btn")]
-        [SerializeField] private GameObject[] navigationButtons;
+        public TextMeshProUGUI _textMesh;
+        public GameObject[] _btn;
 
-        private readonly string[] demoTitles =
+        private readonly string[] _title =
         {
             "1. Dissolve Effect",
             "2. Flow Light Effect",
@@ -70,7 +62,7 @@ namespace ShaderPractice
             }
 
             InitializeDemo(false);
-            SetDemo(currentDemo);
+            SetDemo(demoNum);
         }
 
         /// <summary>
@@ -78,37 +70,37 @@ namespace ShaderPractice
         /// </summary>
         private bool ValidateReferences()
         {
-            if (characters == null || characters.Length == 0)
+            if (_Character == null || _Character.Length == 0)
             {
                 Debug.LogError("[DemoController] Characters array is not assigned or empty.");
                 return false;
             }
 
-            if (bloomEffect == null)
+            if (_bloom == null)
             {
                 Debug.LogError("[DemoController] Bloom effect is not assigned.");
                 return false;
             }
 
-            if (motionBlurEffect == null)
+            if (_MotionBlur == null)
             {
                 Debug.LogError("[DemoController] Motion blur effect is not assigned.");
                 return false;
             }
 
-            if (characterAnimator == null)
+            if (_Animator == null)
             {
                 Debug.LogError("[DemoController] Character animator is not assigned.");
                 return false;
             }
 
-            if (titleText == null)
+            if (_textMesh == null)
             {
                 Debug.LogError("[DemoController] Title text is not assigned.");
                 return false;
             }
 
-            if (navigationButtons == null || navigationButtons.Length < 2)
+            if (_btn == null || _btn.Length < 2)
             {
                 Debug.LogError("[DemoController] Navigation buttons are not properly assigned.");
                 return false;
@@ -120,16 +112,16 @@ namespace ShaderPractice
         /// <summary>
         /// Initializes demo state by enabling/disabling all effects and characters.
         /// </summary>
-        private void InitializeDemo(bool enabled)
+        private void InitializeDemo(bool isEnabled)
         {
-            bloomEffect.enabled = enabled;
-            motionBlurEffect.enabled = enabled;
+            _bloom.enabled = isEnabled;
+            _MotionBlur.enabled = isEnabled;
 
-            foreach (var character in characters)
+            foreach (var character in _Character)
             {
                 if (character != null)
                 {
-                    character.SetActive(enabled);
+                    character.SetActive(isEnabled);
                 }
             }
         }
@@ -137,42 +129,42 @@ namespace ShaderPractice
         /// <summary>
         /// Sets the current demo to display.
         /// </summary>
-        private void SetDemo(DemoType demo)
+        private void SetDemo(int demo)
         {
-            if (demo == DemoType.None)
+            if (demo == 0)
                 return;
 
-            int demoIndex = (int)demo - 1;
+            int demoIndex = demo - 1;
 
             // Update navigation button visibility
             UpdateNavigationButtons(demo);
 
             // Activate the corresponding character
-            if (demoIndex >= 0 && demoIndex < characters.Length)
+            if (demoIndex >= 0 && demoIndex < _Character.Length)
             {
-                characters[demoIndex].SetActive(true);
+                _Character[demoIndex].SetActive(true);
             }
 
             // Update title text
-            if (demoIndex >= 0 && demoIndex < demoTitles.Length)
+            if (demoIndex >= 0 && demoIndex < _title.Length)
             {
-                titleText.SetText(demoTitles[demoIndex]);
+                _textMesh.SetText(_title[demoIndex]);
             }
 
             // Configure demo-specific effects
-            ConfigureEffects(demo);
+            ConfigureEffects((DemoType)demo);
         }
 
         /// <summary>
         /// Updates the visibility of navigation buttons based on current demo.
         /// </summary>
-        private void UpdateNavigationButtons(DemoType demo)
+        private void UpdateNavigationButtons(int demo)
         {
-            bool showPrevious = demo != DemoType.Dissolve;
-            bool showNext = (int)demo != characters.Length;
+            bool showPrevious = demo != (int)DemoType.Dissolve;
+            bool showNext = demo != _Character.Length;
 
-            navigationButtons[0].SetActive(showPrevious);
-            navigationButtons[1].SetActive(showNext);
+            _btn[0].SetActive(showPrevious);
+            _btn[1].SetActive(showNext);
         }
 
         /// <summary>
@@ -181,53 +173,53 @@ namespace ShaderPractice
         private void ConfigureEffects(DemoType demo)
         {
             // Reset all effects
-            motionBlurEffect.enabled = false;
-            bloomEffect.enabled = false;
-            characterAnimator.SetBool("isMove", false);
-            characterAnimator.SetBool("isGlass", false);
+            _MotionBlur.enabled = false;
+            _bloom.enabled = false;
+            _Animator.SetBool("isMove", false);
+            _Animator.SetBool("isGlass", false);
 
             // Enable demo-specific effects
             switch (demo)
             {
                 case DemoType.MotionBlur:
-                    motionBlurEffect.enabled = true;
-                    characterAnimator.SetBool("isMove", true);
+                    _MotionBlur.enabled = true;
+                    _Animator.SetBool("isMove", true);
                     break;
 
                 case DemoType.Glass:
-                    characterAnimator.SetBool("isGlass", true);
+                    _Animator.SetBool("isGlass", true);
                     break;
 
                 case DemoType.Bloom:
-                    bloomEffect.enabled = true;
+                    _bloom.enabled = true;
                     break;
             }
         }
 
         /// <summary>
-        /// Navigates to the previous demo.
+        /// Navigates to the previous demo. Called by UI button.
         /// </summary>
-        public void PreviousDemo()
+        public void PreDemo()
         {
-            if (currentDemo <= DemoType.Dissolve)
+            if (demoNum <= (int)DemoType.Dissolve)
                 return;
 
             InitializeDemo(false);
-            currentDemo--;
-            SetDemo(currentDemo);
+            demoNum--;
+            SetDemo(demoNum);
         }
 
         /// <summary>
-        /// Navigates to the next demo.
+        /// Navigates to the next demo. Called by UI button.
         /// </summary>
         public void NextDemo()
         {
-            if ((int)currentDemo >= characters.Length)
+            if (demoNum >= _Character.Length)
                 return;
 
             InitializeDemo(false);
-            currentDemo++;
-            SetDemo(currentDemo);
+            demoNum++;
+            SetDemo(demoNum);
         }
     }
 }
