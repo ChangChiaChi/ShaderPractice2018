@@ -1,19 +1,43 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class LookAt : MonoBehaviour {
+namespace ShaderPractice
+{
+    /// <summary>
+    /// Makes the attached GameObject continuously look at a target transform.
+    /// </summary>
+    public class LookAt : MonoBehaviour
+    {
+        [Tooltip("The target transform to look at.")]
+        [SerializeField] private Transform target;
 
-    public Transform _go;
-    public Vector3 _pos;
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-        this.transform.LookAt(_go, Vector3.up);
-        //this.transform.position = _pos;
-	}
+        [Tooltip("Optional position offset (currently unused).")]
+        [SerializeField] private Vector3 positionOffset;
+
+        private void Start()
+        {
+            if (target == null)
+            {
+                Debug.LogWarning($"[LookAt] Target is not assigned on {gameObject.name}. Component will be disabled.");
+                enabled = false;
+            }
+        }
+
+        private void Update()
+        {
+            if (target != null)
+            {
+                transform.LookAt(target, Vector3.up);
+            }
+        }
+
+        /// <summary>
+        /// Sets the target transform at runtime.
+        /// </summary>
+        /// <param name="newTarget">The new target to look at.</param>
+        public void SetTarget(Transform newTarget)
+        {
+            target = newTarget;
+            enabled = target != null;
+        }
+    }
 }

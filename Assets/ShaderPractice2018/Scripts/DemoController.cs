@@ -1,132 +1,225 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
-public class DemoController : MonoBehaviour {
 
-
-    public int demoNum = 0;
-    //1.溶解效果
-    //2.流光效果*
-    //3.描邊*
-    //4.邊緣光*
-    //5.動態模糊*
-    //6.鏡子效果*
-    //7.玻璃效果*
-    //8.Bloom效果
-
-    public GameObject[] _Character;
-
-    public TAShader.Bloom _bloom;
-    public TAShader.MotionBlur _MotionBlur;
-    public Animator _Animator;
-
-    public TextMeshProUGUI _textMesh;
-
-    string[] _title = {
-        "1.溶解效果",
-        "2.流光效果",
-        "3.描邊",
-        "4.邊緣光",
-        "5.動態模糊",
-        "6.鏡子效果",
-        "7.玻璃效果",
-        "8.Bloom效果"
-    };
-
-    public GameObject[] _btn;
-    // Use this for initialization
-    void Start () {
-        //初始化關閉
-        DemoInit(false);
-
-        DemoNum(demoNum);
-    }
-
-    void DemoInit(bool boolValue)
+namespace ShaderPractice
+{
+    /// <summary>
+    /// Controls the demo scene, switching between different shader effect demonstrations.
+    /// </summary>
+    public class DemoController : MonoBehaviour
     {
-        _bloom.enabled = boolValue;
-        _MotionBlur.enabled = boolValue;
-
-        for (int i = 0; i < _Character.Length; i++)
+        /// <summary>
+        /// Enumeration of available shader demo effects.
+        /// </summary>
+        public enum DemoType
         {
-            _Character[i].SetActive(boolValue);
-        }
-    }
-
-    void DemoNum(int demoNum)
-    {
-        if (demoNum == 0)
-            return;
-
-
-
-        if (demoNum == 1)
-        {
-            _btn[0].SetActive(false);
-            _btn[1].SetActive(true);
-        }
-        else if (demoNum == _Character.Length)
-        {
-            _btn[0].SetActive(true);
-            _btn[1].SetActive(false);
-        }
-        else
-        {
-            _btn[0].SetActive(true);
-            _btn[1].SetActive(true);
+            None = 0,
+            Dissolve = 1,
+            FlowLight = 2,
+            Outline = 3,
+            RimLight = 4,
+            MotionBlur = 5,
+            Mirror = 6,
+            Glass = 7,
+            Bloom = 8
         }
 
-        int num = demoNum - 1;
+        [Header("Demo Settings")]
+        [SerializeField] private DemoType currentDemo = DemoType.None;
 
-        _Character[num].SetActive(true);
-        _textMesh.SetText(_title[num]);
+        [Header("Character References")]
+        [SerializeField] private GameObject[] characters;
 
+        [Header("Post-Processing Effects")]
+        [SerializeField] private TAShader.Bloom bloomEffect;
+        [SerializeField] private TAShader.MotionBlur motionBlurEffect;
 
+        [Header("Animation")]
+        [SerializeField] private Animator characterAnimator;
 
-        if (num == 4)
+        [Header("UI References")]
+        [SerializeField] private TextMeshProUGUI titleText;
+        [SerializeField] private GameObject[] navigationButtons;
+
+        private readonly string[] demoTitles =
         {
-            _MotionBlur.enabled = true;
-            _Animator.SetBool("isMove", true);
-        }
-        else
+            "1. Dissolve Effect",
+            "2. Flow Light Effect",
+            "3. Outline",
+            "4. Rim Light",
+            "5. Motion Blur",
+            "6. Mirror Effect",
+            "7. Glass Effect",
+            "8. Bloom Effect"
+        };
+
+        private void Start()
         {
-            _MotionBlur.enabled = false;
-            _Animator.SetBool("isMove", false);
+            if (!ValidateReferences())
+            {
+                enabled = false;
+                return;
+            }
+
+            InitializeDemo(false);
+            SetDemo(currentDemo);
         }
 
-        if (num == 6)
+        /// <summary>
+        /// Validates that all required references are assigned.
+        /// </summary>
+        private bool ValidateReferences()
         {
-            _Animator.SetBool("isGlass", true);
-        }
-        else
-        {
-            _Animator.SetBool("isGlass", false);
+            if (characters == null || characters.Length == 0)
+            {
+                Debug.LogError("[DemoController] Characters array is not assigned or empty.");
+                return false;
+            }
+
+            if (bloomEffect == null)
+            {
+                Debug.LogError("[DemoController] Bloom effect is not assigned.");
+                return false;
+            }
+
+            if (motionBlurEffect == null)
+            {
+                Debug.LogError("[DemoController] Motion blur effect is not assigned.");
+                return false;
+            }
+
+            if (characterAnimator == null)
+            {
+                Debug.LogError("[DemoController] Character animator is not assigned.");
+                return false;
+            }
+
+            if (titleText == null)
+            {
+                Debug.LogError("[DemoController] Title text is not assigned.");
+                return false;
+            }
+
+            if (navigationButtons == null || navigationButtons.Length < 2)
+            {
+                Debug.LogError("[DemoController] Navigation buttons are not properly assigned.");
+                return false;
+            }
+
+            return true;
         }
 
-        if (num == 7)
+        /// <summary>
+        /// Initializes demo state by enabling/disabling all effects and characters.
+        /// </summary>
+        private void InitializeDemo(bool enabled)
         {
-            _bloom.enabled = true;
-        }
-        else
-        {
-            _bloom.enabled = false;
-        }
-    }
-    public void PreDemo()
-    {
-        DemoInit(false);
-        demoNum -= 1;
-        DemoNum(demoNum);
-        Debug.Log("PreDemo" + demoNum);
-    }
+            bloomEffect.enabled = enabled;
+            motionBlurEffect.enabled = enabled;
 
-    public void NextDemo()
-    {
-        DemoInit(false);
-        demoNum += 1;
-        DemoNum(demoNum);
-        Debug.Log("NextDemo:" + demoNum);
+            foreach (var character in characters)
+            {
+                if (character != null)
+                {
+                    character.SetActive(enabled);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the current demo to display.
+        /// </summary>
+        private void SetDemo(DemoType demo)
+        {
+            if (demo == DemoType.None)
+                return;
+
+            int demoIndex = (int)demo - 1;
+
+            // Update navigation button visibility
+            UpdateNavigationButtons(demo);
+
+            // Activate the corresponding character
+            if (demoIndex >= 0 && demoIndex < characters.Length)
+            {
+                characters[demoIndex].SetActive(true);
+            }
+
+            // Update title text
+            if (demoIndex >= 0 && demoIndex < demoTitles.Length)
+            {
+                titleText.SetText(demoTitles[demoIndex]);
+            }
+
+            // Configure demo-specific effects
+            ConfigureEffects(demo);
+        }
+
+        /// <summary>
+        /// Updates the visibility of navigation buttons based on current demo.
+        /// </summary>
+        private void UpdateNavigationButtons(DemoType demo)
+        {
+            bool showPrevious = demo != DemoType.Dissolve;
+            bool showNext = (int)demo != characters.Length;
+
+            navigationButtons[0].SetActive(showPrevious);
+            navigationButtons[1].SetActive(showNext);
+        }
+
+        /// <summary>
+        /// Configures effects specific to each demo type.
+        /// </summary>
+        private void ConfigureEffects(DemoType demo)
+        {
+            // Reset all effects
+            motionBlurEffect.enabled = false;
+            bloomEffect.enabled = false;
+            characterAnimator.SetBool("isMove", false);
+            characterAnimator.SetBool("isGlass", false);
+
+            // Enable demo-specific effects
+            switch (demo)
+            {
+                case DemoType.MotionBlur:
+                    motionBlurEffect.enabled = true;
+                    characterAnimator.SetBool("isMove", true);
+                    break;
+
+                case DemoType.Glass:
+                    characterAnimator.SetBool("isGlass", true);
+                    break;
+
+                case DemoType.Bloom:
+                    bloomEffect.enabled = true;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Navigates to the previous demo.
+        /// </summary>
+        public void PreviousDemo()
+        {
+            if (currentDemo <= DemoType.Dissolve)
+                return;
+
+            InitializeDemo(false);
+            currentDemo--;
+            SetDemo(currentDemo);
+        }
+
+        /// <summary>
+        /// Navigates to the next demo.
+        /// </summary>
+        public void NextDemo()
+        {
+            if ((int)currentDemo >= characters.Length)
+                return;
+
+            InitializeDemo(false);
+            currentDemo++;
+            SetDemo(currentDemo);
+        }
     }
 }

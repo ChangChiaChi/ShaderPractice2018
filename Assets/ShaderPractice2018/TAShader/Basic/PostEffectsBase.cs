@@ -1,57 +1,83 @@
-﻿using UnityEngine;
-using System.Collections;
+using UnityEngine;
 
-[ExecuteInEditMode]
-[RequireComponent (typeof(Camera))]
-public class PostEffectsBase : MonoBehaviour {
+namespace TAShader
+{
+    /// <summary>
+    /// Base class for post-processing effects.
+    /// Provides common functionality for shader-based image effects.
+    /// </summary>
+    [ExecuteInEditMode]
+    [RequireComponent(typeof(Camera))]
+    public class PostEffectsBase : MonoBehaviour
+    {
+        /// <summary>
+        /// Checks if the platform supports required features.
+        /// </summary>
+        protected void CheckResources()
+        {
+            if (!CheckSupport())
+            {
+                NotSupported();
+            }
+        }
 
-	// Called when start
-	protected void CheckResources() {
-		bool isSupported = CheckSupport();
-		
-		if (isSupported == false) {
-			NotSupported();
-		}
-	}
+        /// <summary>
+        /// Verifies platform support for image effects and render textures.
+        /// </summary>
+        protected virtual bool CheckSupport()
+        {
+            if (!SystemInfo.supportsImageEffects)
+            {
+                Debug.LogWarning("[PostEffectsBase] This platform does not support image effects.");
+                return false;
+            }
 
-	// Called in CheckResources to check support on this platform
-	protected bool CheckSupport() {
-		if (SystemInfo.supportsImageEffects == false || SystemInfo.supportsRenderTextures == false) {
-			Debug.LogWarning("This platform does not support image effects or render textures.");
-			return false;
-		}
-		
-		return true;
-	}
+            return true;
+        }
 
-	// Called when the platform doesn't support this effect
-	protected void NotSupported() {
-		enabled = false;
-	}
-	
-	protected void Start() {
-		CheckResources();
-	}
+        /// <summary>
+        /// Called when the platform doesn't support required features.
+        /// </summary>
+        protected virtual void NotSupported()
+        {
+            enabled = false;
+        }
 
-	// Called when need to create the material used by this effect
-	protected Material CheckShaderAndCreateMaterial(Shader shader, Material material) {
-		if (shader == null) {
-			return null;
-		}
-		
-		if (shader.isSupported && material && material.shader == shader)
-			return material;
-		
-		if (!shader.isSupported) {
-			return null;
-		}
-		else {
-			material = new Material(shader);
-			material.hideFlags = HideFlags.DontSave;
-			if (material)
-				return material;
-			else 
-				return null;
-		}
-	}
+        protected virtual void Start()
+        {
+            CheckResources();
+        }
+
+        /// <summary>
+        /// Creates or retrieves a material for the specified shader.
+        /// </summary>
+        /// <param name="shader">The shader to use for the material.</param>
+        /// <param name="material">Reference to store the created material.</param>
+        /// <returns>The created or existing material, or null if shader is not supported.</returns>
+        protected Material CheckShaderAndCreateMaterial(Shader shader, Material material)
+        {
+            if (shader == null)
+            {
+                return null;
+            }
+
+            if (shader.isSupported && material != null && material.shader == shader)
+            {
+                return material;
+            }
+
+            if (!shader.isSupported)
+            {
+                Debug.LogWarning($"[PostEffectsBase] Shader '{shader.name}' is not supported on this platform.");
+                return null;
+            }
+
+            material = new Material(shader)
+            {
+                hideFlags = HideFlags.DontSave
+            };
+
+            return material;
+        }
+    }
 }
